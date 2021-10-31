@@ -8,78 +8,69 @@ import { api } from './services/api';
 import './styles/global.scss';
 
 
-
-interface GenreResponseProps {
+// The format and types expected for the Genres from the API were defined bellow
+// interface GenreResponseProps {
+interface GenreResponse {
   id: number;
   name: 'action' | 'comedy' | 'documentary' | 'drama' | 'horror' | 'family';
   title: string;
 }
 
-// interface MovieProps {
-//   imdbID: string;
-//   Title: string;
-//   Poster: string;
-//   Ratings: Array<{
-//     Source: string;
-//     Value: string;
-//   }>;
-//   Runtime: string;
-// }
+interface MovieResponse {
+  imdbID: string;
+  Title: string;
+  Poster: string;
+  Ratings: Array<{
+    Source: string;
+    Value: string;
+  }>;
+  Runtime: string;
+}
 
 export function App() {
-  // const [selectedGenreId, setSelectedGenreId] = useState(1);
+  
+  // Set genres value as a an Array of GenreResponse by passing this property 
+  // between the < > tag before the () of the useState(). 
+  // So we can tell which type we can store inside this state!
+  // As the desired type is an array (list) of objects and not a single object,
+  // the Array signal [] must be inserted after the GenreResponse type.   
+  const [genres, setGenres] = useState<GenreResponse[]>([]);
+  const [selectedGenre, setSelectedGenre] = useState<GenreResponse>({} as GenreResponse);
+  const [movies, setMovies] = useState<MovieResponse[]>([]);
+  const [selectedGenreId, setSelectedGenreId] = useState(1);
+  
 
-  const [genres, setGenres] = useState<GenreResponseProps[]>([]);
-
-  // const [movies, setMovies] = useState<MovieProps[]>([]);
-  // const [selectedGenre, setSelectedGenre] = useState<GenreResponseProps>({} as GenreResponseProps);
+  function selectedGenreIdFromSidebarCallback(selectedGenreIdFromSidebar: number){
+    setSelectedGenreId(selectedGenreIdFromSidebar);
+  }
 
   useEffect(() => {
-    api.get<GenreResponseProps[]>('genres').then(response => {
-      setGenres(response.data);
+    api.get<GenreResponse[]>('genres')
+      .then(response => setGenres(response.data))
+    },[]);
 
-      console.log(response.data)
+  useEffect(() => {
+    api.get<MovieResponse[]>(`movies/?Genre_id=${selectedGenreId}`).then(response => {
+      setMovies(response.data);
     });
-  }, []);
 
-  // useEffect(() => {
-  //   api.get<MovieProps[]>(`movies/?Genre_id=${selectedGenreId}`).then(response => {
-  //     setMovies(response.data);
-  //   });
+    api.get<GenreResponse>(`genres/${selectedGenreId}`).then(response => {
+      setSelectedGenre(response.data);
+    })
+  }, [selectedGenreId]);
 
-  //   api.get<GenreResponseProps>(`genres/${selectedGenreId}`).then(response => {
-  //     setSelectedGenre(response.data);
-  //   })
-  // }, [selectedGenreId]);
-
-
-
-// static data
-
-// const static_id: 1;
-// const static_name: "action";
-// const static_title: "Jesus";
 
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
-      { genres[0] &&
-        <SideBar 
-          api_genre_id={1} 
-          api_genre_name="action"
-          // api_genre_title="Jesus"
+      <SideBar
+        genres={genres}
+        selectGenreIdCallback={selectedGenreIdFromSidebarCallback}
+      />
 
-          // api_genre_id={genres[0].id} 
-          // api_genre_name={genres[0].name} 
-          api_genre_title={genres[0].title} 
-        />
-      }
       <Content 
-        static_selected_genre_id={1}
-        static_movie_imdbID ={1} 
-        static_movie_title="Underdog"
-        static_movie_poster="https://m.media-amazon.com/images/M/MV5BMTk5NjkyNzEwOV5BMl5BanBnXkFtZTcwODc5NDI1MQ@@._V1_SX300.jpg"
-        static_movie_title_runtime="84 min"
-        static_movie_title_rating="10/10"
+        movies={movies}
+        genres={genres}
+        selectedGenreId={selectedGenreId}
       />
     </div>
   )
